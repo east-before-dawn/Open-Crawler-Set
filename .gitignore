@@ -130,4 +130,5 @@ dmypy.json
 
 
 # 忽略图片
-*\xchina\images
+/xchina/images/full/
+#*.jpg

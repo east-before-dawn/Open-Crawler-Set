@@ -49,14 +49,28 @@ class XchinaSpider(CrawlSpider):
 
         item['image_urls'] = response.xpath('//div[@class="main"]'
                                             '//div[@class="photos"]/a/@href').getall()
+
+        item['url'] = response.url
+
         pprint("----------------------")
         pprint(item['title'])
         pprint(item['time'])
         pprint(item['pics'])
         # pprint(item['image_urls'])
+        pprint(item['url'])
 
         # yield item
         return item
+
+
+
+
+
+
+
+
+
+
 
         # for image_url in item['image_urls']:
         #     image_url = 'https://xchina.co' + image_url

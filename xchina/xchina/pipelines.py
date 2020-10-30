@@ -5,6 +5,8 @@
 
 
 # useful for handling different item types with a single interface
+import os
+import re
 from pprint import pprint
 
 import scrapy
@@ -12,6 +14,8 @@ from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.utils.project import get_project_settings
+from twisted.web.http import urlparse
+
 from xchina.items import XchinaItem
 
 
@@ -40,23 +44,50 @@ from xchina.items import XchinaItem
 #         # 关闭数据库链接
 #         pass
 
+def _strip(path):
+    """
+    :param path: 需要清洗的文件夹名字
+    :return: 清洗掉Windows系统非法文件夹名字的字符串
+    """
+    path = re.sub(r'[？*|“”<>:/ \\]', '', str(path))
+    return path
+
+
 class MyImagesPipeline(ImagesPipeline):
     # 从项目设置文件中导入图片下载路径
     img_store = get_project_settings().get('IMAGES_STORE')
+
+    def file_path(self, request, response=None, info=None, *, item=None):
+
+        folder = item['title']
+        folder_strip = _strip(folder)
+        image_guid = request.url.split('/')[-1]
+        image_guid = image_guid[:-4].strip()
+        path = f'full/{folder_strip}/{image_guid}.jpg'
+        # pprint(path)
+        return path
+        # return f'full/{image_guid}.jpg'
+        # return 'files/' + os.path.basename(urlparse(request.url).path)
 
     # 发送图片下载请求
     def get_media_requests(self, item, info):
         for image_url in item['image_urls']:
             image_url = 'https://xchina.co' + image_url
             pprint(image_url)
-
-            yield scrapy.Request(image_url)
+            referer = item['url']
+            yield scrapy.Request(image_url, headers={'referer': referer})
 
     def item_completed(self, results, item, info):
         image_paths = [x['path'] for ok, x in results if ok]
         if not image_paths:
             raise DropItem("Item contains no images")
+        # 重复筛选器
         adapter = ItemAdapter(item)
         adapter['image_paths'] = image_paths
 
         return item
+
+
+if __name__ == "__main__":
+    a = '我 是一个？*|“”<> :/ \    错误的  字符串'
+    pprint(_strip(a))

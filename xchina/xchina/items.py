@@ -14,6 +14,8 @@ class XchinaItem(scrapy.Item):
     time = scrapy.Field()   # 2020-09-14
     pics = scrapy.Field()   # 52P
 
+    url = scrapy.Field()    # referer
+
     image_urls = scrapy.Field()
     images = scrapy.Field()
     image_paths = scrapy.Field()
