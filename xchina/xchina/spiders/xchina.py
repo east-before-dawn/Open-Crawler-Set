@@ -10,8 +10,10 @@ from xchina.items import XchinaItem
 class XchinaSpider(CrawlSpider):
     name = 'xchina'
     allowed_domains = ['xchina.co']
+    # start_urls = ['https://xchina.co/photos'
+    #               '/model-杨晨晨sugar.html']
     start_urls = ['https://xchina.co/photos'
-                  '/model-%E5%B0%B1%E6%98%AF%E9%98%BF%E6%9C%B1%E5%95%8A.html']
+                  '/model-陆萱萱.html']
 
     rules = (
         # 相册入口url
@@ -19,7 +21,7 @@ class XchinaSpider(CrawlSpider):
             restrict_xpaths='//div[@class="main"]//div[@class="list"]'
                             '/div[@class="item"]/div[2]',
             tags=('a', 'area'), attrs='href',
-          ),
+        ),
             callback='parse_item',
             follow=False
         ),
@@ -27,7 +29,7 @@ class XchinaSpider(CrawlSpider):
         Rule(LinkExtractor(
             restrict_xpaths='//div[@class="pager"]//a[@class="next"]',
             tags=('a', 'area'), attrs='href',
-            ),
+        ),
             # callback='parse_test',
             follow=True
         ),
@@ -64,7 +66,7 @@ class XchinaSpider(CrawlSpider):
                                   '/@href').get()
 
         if None == next_url:
-            pprint('翻页无')
+            pprint('翻页无!!!')
             return item
         else:
             pprint("next: " + next_url)
@@ -86,7 +88,8 @@ class XchinaSpider(CrawlSpider):
 
         item['image_urls'] += image_urls
 
-        next_url = response.xpath('//div[@class="pager"]//a[@class="next"]'
+        next_url = response.xpath('//div[@class="pager"]'
+                                  '//a[@class="next"]'
                                   '/@href').get()
 
         if None == next_url:
@@ -97,4 +100,3 @@ class XchinaSpider(CrawlSpider):
             follow_url = response.follow(next_url, self.parse_photos_page,
                                          cb_kwargs=dict(item=item))
             return follow_url
-        
