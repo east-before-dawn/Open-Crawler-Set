@@ -28,13 +28,13 @@ class XchinaSpider(CrawlSpider):
             restrict_xpaths='//div[@class="pager"]//a[@class="next"]',
             tags=('a', 'area'), attrs='href',
             ),
-            callback='parse_test',
+            # callback='parse_test',
             follow=True
         ),
     )
 
     def parse_item(self, response):
-        self.logger.info(response.url)
+        # self.logger.info(response.url)
         item = XchinaItem()
 
         item['title'] = response.xpath('//div[@class="top"]//h1/text()').get()
@@ -48,7 +48,8 @@ class XchinaSpider(CrawlSpider):
                                       '/text()').get()
 
         item['image_urls'] = response.xpath('//div[@class="main"]'
-                                            '//div[@class="photos"]/a/@href').getall()
+                                            '//div[@class="photos"]'
+                                            '/a/@href').getall()
 
         item['url'] = response.url
 
@@ -59,36 +60,41 @@ class XchinaSpider(CrawlSpider):
         # pprint(item['image_urls'])
         pprint(item['url'])
 
+        next_url = response.xpath('//div[@class="pager"]//a[@class="next"]'
+                                  '/@href').get()
+
+        if None == next_url:
+            pprint('翻页无')
+            return item
+        else:
+            pprint("next: " + next_url)
+            follow_url = response.follow(next_url, self.parse_photos_page,
+                                         cb_kwargs=dict(item=item))
+            return follow_url
         # yield item
-        return item
+        # return item
 
+    def parse_photos_page(self, response, item):
+        """
 
+        :rtype: object
+        """
 
+        image_urls = response.xpath('//div[@class="main"]'
+                                    '//div[@class="photos"]'
+                                    '/a/@href').getall()
 
+        item['image_urls'] += image_urls
 
+        next_url = response.xpath('//div[@class="pager"]//a[@class="next"]'
+                                  '/@href').get()
 
-
-
-
-
-
-        # for image_url in item['image_urls']:
-        #     image_url = 'https://xchina.co' + image_url
-        #     yield scrapy.Request(image_url,
-        #                          # meta={'item': item},
-        #                          callback=self.parse_images,
-        #                          )
-
-        # yield scrapy.Request('https://xchina.co/gather/5f86a09e85d28/'
-        #                      '1309471fmzb7ec99ihm7im.jpg',
-        #                      # meta={'item': item},
-        #                      callback=self.parse_images,
-        #                      )
-
-    # def parse_images(self, response):
-    #     pprint(response)
-    #     pass
-    #
-    # def parse_test(self, response):
-    #     pprint(response)
-    #     pass
+        if None == next_url:
+            pprint('翻页无!!!')
+            return item
+        else:
+            pprint("next: " + next_url)
+            follow_url = response.follow(next_url, self.parse_photos_page,
+                                         cb_kwargs=dict(item=item))
+            return follow_url
+        
