@@ -12,8 +12,12 @@ class XchinaSpider(CrawlSpider):
     allowed_domains = ['xchina.co']
     # start_urls = ['https://xchina.co/photos'
     #               '/model-杨晨晨sugar.html']
-    start_urls = ['https://xchina.co/photos'
-                  '/model-陆萱萱.html']
+    # start_urls = ['https://xchina.co/photos'
+    #               '/model-陆萱萱.html']
+    # start_urls = ['https://xchina.co/photos/'
+    #               'model-就是阿朱啊.html']
+    start_urls = ['https://xchina.co/photos/'
+                  'series-王动作品.html']
 
     rules = (
         # 相册入口url
