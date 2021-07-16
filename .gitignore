@@ -131,4 +131,6 @@ dmypy.json
 
 # 忽略图片
 /xchina/images/full/
+/xchina/logs
 #*.jpg
+

@@ -1,0 +1,142 @@
+from pprint import pprint
+
+import scrapy
+from scrapy.http.response.html import HtmlResponse
+from scrapy.selector.unified import SelectorList
+from scrapy.utils.response import open_in_browser
+import time
+import sys
+from book118.items import Book118Item
+from book118.cookie_set import cookieset
+from book118.custom_setting import customsetting
+
+
+class Book118Spider(scrapy.Spider):
+    name = 'book118'
+    allowed_domains = ['book118.com']
+    start_urls = ['https://max.book118.com/html/2020/0828'
+                  '/8021111110002136.shtm']
+
+    cookie = {}
+    page_cnt = 1 + 6
+    pages = 89  # 默认全部页数
+    one_time_flag = False
+    img_urls = {}
+
+    def parse(self, response, **kwargs):
+        for i in cookieset.COOKIE_V.split('; '):
+            self.cookie[i.split('=')[0]] = i.split("=")[1]
+        pprint(self.cookie)
+
+        # item = Book118Item()
+        remaining_pages_url =
+
+        pprint("点击剩余页面")
+        yield scrapy.Request(
+            remaining_pages_url,
+            # 'https://max.book118.com',
+            headers={
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'keep-alive',
+                'Host': 'openapi.book118.com',
+                'sec-ch-ua': '\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"',
+                'sec-ch-ua-mobile': '?0',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1'
+                # 'Referer': 'https://max.book118.com/'
+            },
+            # meta={"item", item},
+            callback=self.parse_pages,  # 递归回调
+            errback=self.err_back,  # 错误回调
+            cookies=self.cookie
+        )
+        pprint("---")
+        pass
+
+    def parse_pages(self, response):
+        if self.page_cnt > 89:
+            pprint("img_urls: ")
+            pprint(self.img_urls)
+            return
+
+        pprint("剩余页面")
+        pprint(response.text)
+
+        # 判断消息是否成功 'jQuery({"status":200,"message":"ok",
+        text = response.text
+        k = text.index('\"data\":')
+        k = k + 7
+        # pprint(k)
+        j = text.index(',\"pages\":')
+        text = text[k:j]  # 掐头去尾
+        pprint(text)
+        text = text.replace("\\", "")
+        text = text.replace("{", "")
+        text = text.replace("}", "")
+        text = text.replace("\"", "")
+        pprint(text)
+        item = Book118Item()
+        for i in text.split(','):
+            self.img_urls[i.split(':')[0]] = i.split(":")[1]
+            # 这里image_urls可以几个链接丢到一个字典里，但是会跟页面请求都混在请求连接调度里
+            # 看选取效率还是可靠性
+            item['images_id'] = i.split(':')[0]
+            item['image_url'] = 'https:' + i.split(":")[1]
+            yield item
+            delay = 3
+            time.sleep(delay)
+        # pprint("img_urls: ")
+        # pprint(self.img_urls)
+
+        self.page_cnt += 6
+        pprint(self.page_cnt)
+
+        pages_url = \
+            "https://openapi.book118.com/getPreview.html?" \
+            "&project_id=1&aid=294721773&t=d50bd8d0481629a9af934d1077041212" \
+            "&view_token=xuRQtPJrD34tJ3lrAQLiuJlfKkbH2z98" \
+            "&page="
+        pages_url_tail = "&filetype=pdf&callback=jQuery"
+
+        pages_url = pages_url + str(self.page_cnt) + pages_url_tail
+        pprint(pages_url)
+
+        yield scrapy.Request(
+            pages_url,
+            # 'https://max.book118.com',
+            headers={
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'keep-alive',
+                'Host': 'openapi.book118.com',
+                'sec-ch-ua': '\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"',
+                'sec-ch-ua-mobile': '?0',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1'
+                # 'Referer': 'https://max.book118.com/'
+            },
+            # meta={"item", item},
+            callback=self.parse_pages,  # 递归回调
+            errback=self.err_back,  # 错误回调
+            cookies=self.cookie
+        )
+        pprint("------" * 13)
+        # delay = 5
+        # time.sleep(delay)
+        pass
+
+    def err_back(self, response):
+        pprint("errback")
+        pprint(response)
+        pass
